@@ -8,11 +8,6 @@ output "role_arn" {
 
 output "try_it" {
   value = <<-EOT
-    ./reader.sh whoami                       # you, then the role
-    ./reader.sh get public/hello.txt         # allowed by ReadEveryObject
-    ./reader.sh get secret/grades.csv        # explicit deny: ButNeverTheGrades
-    ./reader.sh put uploads/hw.txt           # implicit deny: nothing allows PutObject
-    ./reader.sh simulate                     # same answers, no request sent
-    terraform apply -var allow_uploads=true  # then put again
+    ./whoami.sh  # prints your admin identity, then the assumed role identity
   EOT
 }
