@@ -6,9 +6,6 @@ name: whoami
 on:
   push:
 
-env:
-  AWS_ROLE_ARN: arn:aws:iam::523734927941:role/github-action-itcc-course-material
-
 permissions:
   id-token: write # lets the job request an OIDC token from GitHub
   contents: read
