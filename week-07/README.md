@@ -14,6 +14,24 @@ lambda/
   burst.sh         N concurrent invocations, counts execution environments
 ```
 
+## Local testing
+
+Build and run the container locally using the Lambda Runtime Interface Emulator (built into the base image):
+
+```bash
+cd week-07/lambda
+docker build -t prompts .
+docker run --rm -p 9000:8080 prompts
+```
+
+In another terminal, invoke the function:
+
+```bash
+curl -s http://localhost:9000/2015-03-31/functions/function/invocations -d '{"message": "hello"}' | jq -r .
+```
+
+This hits the same handler code that runs in Lambda — useful for testing changes before pushing to ECR.
+
 ## Getting started
 
 A container-image function cannot be created until its image is in ECR, and Terraform does not build images. Follow the steps in [docs/ecr-build-tag-push.md](docs/ecr-build-tag-push.md) to create the repo, build, tag, and push the image, then apply the full Terraform config:
