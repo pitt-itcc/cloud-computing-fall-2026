@@ -1,0 +1,30 @@
+# Copy to .github/workflows/whoami.yml in the repo you trusted, then run it from the Actions tab.
+# Set the repository variable AWS_ROLE_ARN (Settings > Secrets and variables > Actions > Variables)
+# to the role_arn output. It is not a secret: the trust policy, not the ARN, is what protects it.
+name: whoami
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write # lets the job request an OIDC token from GitHub
+  contents: read
+
+jobs:
+  whoami:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Exchange the GitHub OIDC token for AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Who am I?
+        run: aws sts get-caller-identity
+
+      - name: Allowed by the role
+        run: aws s3 ls
+
+      - name: Not allowed by the role (expected to fail)
+        run: aws ec2 describe-instances || echo "AccessDenied, as designed"
