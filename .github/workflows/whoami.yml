@@ -5,6 +5,8 @@ name: whoami
 
 on:
   push:
+    branches:
+      - main
 
 permissions:
   id-token: write # lets the job request an OIDC token from GitHub
