@@ -4,7 +4,10 @@
 name: whoami
 
 on:
-  workflow_dispatch:
+  push:
+
+env:
+  AWS_ROLE_ARN: arn:aws:iam::523734927941:role/github-action-itcc-course-material
 
 permissions:
   id-token: write # lets the job request an OIDC token from GitHub
@@ -20,11 +23,11 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: us-east-1
 
-      - name: Who am I?
+      - name: whoami
         run: aws sts get-caller-identity
 
       - name: Allowed by the role
         run: aws s3 ls
 
       - name: Not allowed by the role (expected to fail)
-        run: aws ec2 describe-instances || echo "AccessDenied, as designed"
+        run: aws ec2 describe-instances
