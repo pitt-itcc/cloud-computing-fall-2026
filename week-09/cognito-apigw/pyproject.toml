@@ -1,0 +1,17 @@
+[project]
+name = "cognito-apigw-demo"
+version = "0.1.0"
+description = "Week 9 demo: Lambda behind an API Gateway Cognito authorizer"
+requires-python = ">=3.14"
+# The handler only uses the standard library. Add runtime dependencies here;
+# the Dockerfile installs them into the Lambda task root.
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
