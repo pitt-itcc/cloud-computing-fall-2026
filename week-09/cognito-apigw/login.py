@@ -24,7 +24,6 @@ import secrets
 import sys
 import urllib.parse
 import urllib.request
-import webbrowser
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 
@@ -105,11 +104,11 @@ def main():
         "state": state,
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
+        "prompt": "login",
     })
 
-    print("[1-2] Sending the browser to Cognito's login page:")
+    print("[1-2] open this URL in a browser to log in:")
     print(f"      {authorize_url}\n")
-    webbrowser.open(authorize_url)
 
     print("[3]   Log in in the browser (the password goes to Cognito, not to us)...")
     params = wait_for_callback(redirect_uri)

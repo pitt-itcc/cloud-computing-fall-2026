@@ -15,81 +15,60 @@ The Lambda has no token-checking code. API Gateway verifies the token (signature
 
 ```
 app/handler.py        the Lambda (stdlib only), packaged as a container image like week 7
-tests/                pytest for the handler: uv run pytest
 pyproject.toml        dependencies, managed with uv (uv add <pkg>, then uv lock)
 uv.lock
 Dockerfile            multi-stage: uv installs deps into the Lambda task root, then app code is copied in
 cognito.tf            user pool, login domain, app client
-lambda.tf             ECR repo + pull policy, image build/push, the function
+lambda.tf             IAM role, log group, the function (ECR repo is created before Terraform)
 api.tf                REST API, Cognito authorizer, /public and /me
 login.py              authorization code + PKCE login, standard library only
 ```
 
 ## Prerequisites
 
-Docker running, the AWS CLI logged in, Terraform, and uv.
-
-`terraform apply` builds and pushes the image with your local Docker, so set the architecture to match your laptop: `arm64` (default, Apple Silicon) or `-var architecture=x86_64` (Intel/AMD). The image tag is a hash of `app/`, `Dockerfile`, `pyproject.toml`, and `uv.lock`, so editing the handler and re-running `terraform apply` rebuilds, pushes, and redeploys.
-
-## Before class
+- Docker running, the AWS CLI logged in, Terraform, and uv
+- an ECR repo named `cognito-demo` with the image already pushed (see [week 7 docs](../../week-07/docs/ecr-build-tag-push.md) if you need a refresher)
+- `uv run pytest` passes
 
 ```bash
-uv run pytest                        # handler tests, no AWS needed
+cd terraform
 terraform init
-terraform apply                      # a few minutes the first time (image build + push)
-terraform output -raw signup_url     # open it, create a user, confirm the emailed code
+terraform apply -var "image_tag=$TAG"   # TAG = whatever you pushed to ECR
+terraform output -raw signup_url        # open it, create a user, confirm the emailed code
 ```
 
-Pre-creating the user saves a few minutes and avoids waiting on the confirmation email live. (The browser lands on a `localhost` page that won't load after sign-up. That's expected.)
+Set the architecture to match your laptop: `-var architecture=x86_64` (Intel/AMD) or `arm64` (Apple Silicon, the default in `variables.tf`). Pre-creating the user saves a few minutes and avoids waiting on the confirmation email live. (The browser lands on a `localhost` page that won't load after sign-up. That's expected.)
 
 ## In class
 
 ```bash
-# 1. Public route works for anyone
-API_URL=$(terraform output -raw api_url)
+# load terraform outputs as env vars (login.py reads these automatically)
+export API_URL=$(terraform -chdir=terraform output -raw api_url)
+export COGNITO_DOMAIN=$(terraform -chdir=terraform output -raw cognito_domain)
+export CLIENT_ID=$(terraform -chdir=terraform output -raw client_id)
+
+# 1. public route works for anyone
 curl "$API_URL/public"
 
-# 2. Protected route rejects you
+# 2. protected route rejects you
 curl -i "$API_URL/me"                # 401 {"message":"Unauthorized"}
 
-# 3. Log in (steps 1-6 on the whiteboard)
-python3 login.py                     # opens the Cognito login page, catches the redirect,
-                                     # trades the code for tokens, prints the ID token
+# 3. log in (opens the browser, catches the redirect, exchanges the code for tokens)
+python3 login.py
 
-# 4. Call the API with the token (steps 7-8)
+# 4. call the API with the token (steps 7-8 on the whiteboard)
 source .tokens
 curl -H "Authorization: $ID_TOKEN" "$API_URL/me"
 
-# 5. Tamper with the token: change one character in the payload and watch it fail
+# 5. tamper with the token: change one character in the payload and watch it fail
 BAD=$(python3 -c 'import os; t=os.environ["ID_TOKEN"]; i=t.index(".")+20; print(t[:i] + ("A" if t[i] != "A" else "B") + t[i+1:])')
 curl -i -H "Authorization: $BAD" "$API_URL/me"               # 401
 ```
 
-Things worth showing along the way:
-
-- Paste `$ID_TOKEN` into [jwt.io](https://jwt.io) and compare `iss`, `aud`, `sub`, `exp` with the GitHub token from Block A.
-- Open `terraform output -raw discovery_url` and then `jwks_url` in a browser: that's where API Gateway gets the public keys.
-- In `terraform/api.tf`, the only difference between the two routes is `authorization = "NONE"` vs `"COGNITO_USER_POOLS"`.
-
-## Notes
-
-- The token goes in the header **raw**, with no `Bearer ` prefix. With no OAuth scopes on the method, the Cognito authorizer expects the **ID token**. Sending `$ACCESS_TOKEN` gets a 401 until you add `authorization_scopes` to the method.
-- If the login page is unreachable or the browser can't open, a CLI fallback that skips the browser flow:
-
-  ```bash
-  aws cognito-idp initiate-auth --auth-flow USER_PASSWORD_AUTH \
-    --client-id "$(terraform output -raw client_id)" \
-    --auth-parameters USERNAME=you@pitt.edu,PASSWORD='YourPassword1' \
-    --query AuthenticationResult.IdToken --output text
-  ```
-
-- Callback URL errors (`redirect_mismatch`) mean the URL differs from `callback_url` by even one character.
-- `docker push` fails with `no basic auth credentials`: the ECR login expired; re-run `terraform apply`.
-- `image manifest media type not supported` on the Lambda: the image was pushed without `--provenance=false`. The Terraform build step sets it; a manual `docker buildx build` needs it too.
-- Cost: pennies at class scale. Cognito, API Gateway, and Lambda are within the free tier for a demo; ECR storage for one small image is a few cents a month until `terraform destroy`.
-
 ## Teardown
 
 ```bash
+cd terraform
 terraform destroy
+aws ecr delete-repository --repository-name cognito-demo --force --region us-east-1
 ```

@@ -2,7 +2,7 @@
 
 This is the flow we drew on the whiteboard in week 9: how a user logs in to an app through an identity provider like Amazon Cognito, and how the app then calls an API on their behalf.
 
-**The players**
+**Resources**
 
 - **User:** the person logging in, using a browser
 - **Client app:** your frontend (for example, a site on S3 + CloudFront)

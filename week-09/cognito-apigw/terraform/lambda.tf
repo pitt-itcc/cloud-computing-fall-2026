@@ -1,35 +1,11 @@
 # lambda backend setup
 
-data "aws_caller_identity" "current" {}
-
-resource "aws_ecr_repository" "fn" {
-  name                 = var.name
-  image_tag_mutability = "IMMUTABLE"
-  force_delete         = true # lets terraform destroy remove pushed images
-}
-
-# @note: permission for api gateway to pull our image
-resource "aws_ecr_repository_policy" "lambda_pull" {
-  repository = aws_ecr_repository.fn.name
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Sid       = "LambdaPull"
-      Effect    = "Allow"
-      Principal = { Service = "lambda.amazonaws.com" }
-      Action    = ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer"]
-      Condition = {
-        StringLike = {
-          "aws:sourceArn" = "arn:aws:lambda:${var.region}:${data.aws_caller_identity.current.account_id}:function:*"
-        }
-      }
-    }]
-  })
+data "aws_ecr_repository" "fn" {
+  name = var.name
 }
 
 locals {
-  image_uri = "${aws_ecr_repository.fn.repository_url}:${var.image_tag}"
+  image_uri = "${data.aws_ecr_repository.fn.repository_url}:${var.image_tag}"
 }
 
 resource "aws_iam_role" "fn" {
@@ -66,7 +42,6 @@ resource "aws_lambda_function" "fn" {
   # image (python:3.14) decide those.
 
   depends_on = [
-    aws_ecr_repository_policy.lambda_pull,
     aws_cloudwatch_log_group.fn,
     aws_iam_role_policy_attachment.logs,
   ]

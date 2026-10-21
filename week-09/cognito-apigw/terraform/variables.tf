@@ -16,7 +16,7 @@ variable "callback_url" {
 
 variable "image_tag" {
   type    = string
-  default = "latest"
+  default = "a716e7b"
 }
 
 variable "architecture" {
