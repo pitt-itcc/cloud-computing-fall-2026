@@ -1,0 +1,8 @@
+.terraform/
+.venv/
+build/
+tests/
+*.tf
+*.tfstate*
+.tokens
+__pycache__/
