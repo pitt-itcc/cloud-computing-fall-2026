@@ -3,4 +3,4 @@ name = "ddb-demo"
 version = "0.1.0"
 description = "CS1660 week 10: DynamoDB operations demo"
 requires-python = ">=3.12"
-dependencies = ["boto3>=1.35"]
+dependencies = ["boto3>=1.35", "botocore[crt]>=1.35"]

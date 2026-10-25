@@ -33,15 +33,13 @@ resource "aws_dynamodb_table" "orders" {
     type = "S"
   }
 
+  global_secondary_index {
+    name            = "by-product"
+    hash_key        = "productId"
+    range_key       = "orderId"
+    projection_type = "ALL"
+  }
+
   # who cares this is a demo
   deletion_protection_enabled = false
-}
-
-resource "aws_dynamodb_table_global_secondary_index" "by_product" {
-  table_name = aws_dynamodb_table.orders.name
-
-  name            = "by-product"
-  hash_key        = "productId"
-  range_key       = "orderId"
-  projection_type = "ALL"
 }
