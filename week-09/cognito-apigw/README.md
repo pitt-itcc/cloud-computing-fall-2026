@@ -34,7 +34,6 @@ login.py              authorization code + PKCE login, standard library only
 cd terraform
 terraform init
 terraform apply -var "image_tag=$TAG"   # TAG = whatever you pushed to ECR
-terraform output -raw signup_url        # open it, create a user, confirm the emailed code
 ```
 
 Set the architecture to match your laptop: `-var architecture=x86_64` (Intel/AMD) or `arm64` (Apple Silicon, the default in `variables.tf`). Pre-creating the user saves a few minutes and avoids waiting on the confirmation email live. (The browser lands on a `localhost` page that won't load after sign-up. That's expected.)
