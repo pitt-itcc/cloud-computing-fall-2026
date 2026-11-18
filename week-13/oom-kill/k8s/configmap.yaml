@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oom-app-config
+  namespace: oom-demo
+data:
+  APP_NAME: "oom-demo"
+  APP_ENV: "staging"
+  APP_MESSAGE: "hello from the configmap"
